@@ -5,5 +5,5 @@
   "type": "module",
   "scripts": { "test": "node --test tests/" },
   "license": "MIT",
-  "repository": "github:Tommyapi/lrf-uart-protocol-decoder"
+  "repository": "github:ErdiTech/lrf-uart-protocol-decoder"
 }
