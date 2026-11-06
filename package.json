@@ -1,0 +1,9 @@
+{
+  "name": "lrf-uart-protocol-decoder",
+  "version": "0.1.0",
+  "description": "Laser rangefinder UART frame decoder (WebSerial + Python): ERDI 5C / 55 AA frames, Benewake TF-style 9-byte frames",
+  "type": "module",
+  "scripts": { "test": "node --test tests/" },
+  "license": "MIT",
+  "repository": "github:Tommyapi/lrf-uart-protocol-decoder"
+}

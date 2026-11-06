@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laser rangefinder UART frame decoder (WebSerial) - ERDI LRF</title>
+<meta name="description" content="Decode laser rangefinder UART frames in the browser: connect a module over WebSerial or paste hex. Supports ERDI 5C and 55 AA frames and Benewake TF-style 9-byte frames.">
+<style>
+  :root { --bg:#fff; --fg:#14181f; --muted:#5b6472; --line:#d9dee6; --accent:#0b5fff; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1318; --fg:#e8ecf2; --muted:#9aa4b2; --line:#2a323d; --accent:#6ea2ff; } }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui,sans-serif; }
+  main { max-width:860px; margin:0 auto; padding:24px 16px 64px; }
+  h1 { font-size:1.5rem; margin:0 0 4px; } p.lead { color:var(--muted); margin:0 0 20px; }
+  label { display:block; font-weight:600; margin:12px 0 4px; }
+  select, textarea, button, input { font:inherit; padding:8px 10px; border:1px solid var(--line); border-radius:6px; background:transparent; color:inherit; }
+  textarea { width:100%; box-sizing:border-box; min-height:84px; font-family:ui-monospace,monospace; }
+  button { cursor:pointer; background:var(--accent); color:#fff; border-color:var(--accent); } button.secondary { background:transparent; color:var(--fg); border-color:var(--line); }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  #big { font-size:2.4rem; font-variant-numeric:tabular-nums; margin:16px 0 4px; }
+  table { border-collapse:collapse; width:100%; font-size:.9rem; margin-top:12px; } th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; }
+  code { font-family:ui-monospace,monospace; } .muted { color:var(--muted); font-size:.9rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Laser rangefinder UART frame decoder</h1>
+  <p class="lead">Connect a rangefinder module with WebSerial (Chrome / Edge) or paste captured hex. Runs entirely in your browser.</p>
+
+  <label for="profile">Protocol profile</label>
+  <select id="profile"></select>
+  <div class="muted" id="baudnote"></div>
+
+  <div class="row" style="margin-top:12px">
+    <button id="connect">Connect serial port</button>
+    <button id="disconnect" class="secondary" disabled>Disconnect</button>
+    <span class="muted" id="status">WebSerial: checking...</span>
+  </div>
+
+  <label for="hex">Or paste hex bytes</label>
+  <textarea id="hex" placeholder="5C 02 11 EC 5C 03 11 EB"></textarea>
+  <div class="row" style="margin-top:8px"><button id="decode">Decode pasted hex</button><button id="clear" class="secondary">Clear table</button></div>
+
+  <div id="big">-</div>
+  <div class="muted" id="stats"></div>
+  <table><thead><tr><th>#</th><th>Frame</th><th>Raw</th><th>Distance (m)</th><th>Note</th></tr></thead><tbody id="rows"></tbody></table>
+
+  <p class="muted">The same <code>5C 02 11 EC</code> frame is 43.54 m on an ERDI H-series module and 4.354 m on a VB-series module: pick the profile that matches your model.
+  Model pages and datasheets: <a href="https://erdilrf.com/models/?utm_source=github&utm_medium=pages&utm_campaign=lrf-uart-protocol-decoder">erdilrf.com/models</a>.
+  Source: <a href="https://github.com/Tommyapi/lrf-uart-protocol-decoder">github.com/Tommyapi/lrf-uart-protocol-decoder</a>.</p>
+</main>
+<script type="module">
+import { Decoder, PROFILES, parseHex } from "./decoder.js";
+const $ = (id) => document.getElementById(id);
+const sel = $("profile");
+for (const [k, p] of Object.entries(PROFILES)) sel.add(new Option(p.label, k));
+let dec = new Decoder(sel.value), count = 0, port = null, reader = null;
+function note() { $("baudnote").textContent = "Default baud " + PROFILES[sel.value].baud + ", 8N1."; }
+note();
+sel.onchange = () => { dec = new Decoder(sel.value); note(); };
+function show(frames) {
+  for (const f of frames) {
+    count++;
+    const tr = document.createElement("tr");
+    const d = f.distance_m === null ? "-" : f.distance_m.toFixed(3);
+    for (const v of [count, f.hex, f.raw, d, f.out_of_range ? "out of range / no echo" : ""]) { const td = document.createElement("td"); td.textContent = v; tr.append(td); }
+    $("rows").prepend(tr);
+    while ($("rows").children.length > 200) $("rows").lastChild.remove();
+    $("big").textContent = f.distance_m === null ? "out of range" : f.distance_m.toFixed(3) + " m";
+  }
+  $("stats").textContent = dec.frames + " valid frames, " + dec.skipped + " bytes skipped (resync)";
+}
+$("decode").onclick = () => { try { dec = new Decoder(sel.value); show(dec.push(parseHex($("hex").value))); } catch (e) { $("stats").textContent = e.message; } };
+$("clear").onclick = () => { $("rows").textContent = ""; count = 0; };
+$("status").textContent = "serial" in navigator ? "WebSerial available" : "WebSerial not supported in this browser (use Chrome or Edge); paste mode still works";
+$("connect").onclick = async () => {
+  if (!("serial" in navigator)) return;
+  try {
+    port = await navigator.serial.requestPort();
+    await port.open({ baudRate: PROFILES[sel.value].baud });
+    dec = new Decoder(sel.value);
+    $("connect").disabled = true; $("disconnect").disabled = false; $("status").textContent = "connected";
+    reader = port.readable.getReader();
+    for (;;) { const { value, done } = await reader.read(); if (done) break; if (value) show(dec.push(value)); }
+  } catch (e) { $("status").textContent = String(e.message || e); }
+  finally { try { reader && reader.releaseLock(); } catch (_) {} }
+};
+$("disconnect").onclick = async () => { try { reader && await reader.cancel(); await port.close(); } catch (_) {} $("connect").disabled = false; $("disconnect").disabled = true; $("status").textContent = "disconnected"; };
+</script>
+</body>
+</html>
