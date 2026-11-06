@@ -60,6 +60,7 @@ Add an entry to `PROFILES` and a branch in `tryFrame` (JS) / `decode` (Python), 
 - [ErdiTech/erdi-lrf-drivers](https://github.com/ErdiTech/erdi-lrf-drivers): Python, Arduino, ROS 2 drivers and protocol documents for ERDI modules
 - [laser-rangefinder-module-database](https://github.com/ErdiTech/laser-rangefinder-module-database): open dataset of laser rangefinder specifications
 - [awesome-laser-rangefinder](https://github.com/ErdiTech/awesome-laser-rangefinder): curated list of laser rangefinder resources
+- [ERDI module datasheets, wiring diagrams and prices](https://erdilrf.com/models/) — the modules these tools target
 
 ## Support / 打赏
 
@@ -82,3 +83,4 @@ Built by tommyapi.com
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
