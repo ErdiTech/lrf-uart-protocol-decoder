@@ -64,6 +64,22 @@ Add an entry to `PROFILES` and a branch in `tryFrame` (JS) / `decode` (Python), 
 - [awesome-laser-rangefinder](https://github.com/ErdiTech/awesome-laser-rangefinder): curated list of laser rangefinder resources
 - [ERDI module datasheets, wiring diagrams and prices](https://erdilrf.com/models/) — the modules these tools target
 
+## Support / 打赏
+
+If this project saved you time, you can buy the author a coffee in crypto. Thank you!
+如果这个项目帮到了你，欢迎用加密货币打赏支持，谢谢！
+
+| Network | Asset | Address |
+|---|---|---|
+| TRON (TRC20) | USDT | `TNGdTwE6opH6rmUyoG1JUR7FSyEb4k273R` |
+| Ethereum / BNB Chain / Polygon | USDT | `0x59c43144a862b351fa1086ae842d1327c9d91613` |
+| Ethereum / Arbitrum / Base | ETH | `0x59c43144a862b351fa1086ae842d1327c9d91613` |
+| Bitcoin | BTC | `1RS6tWXHregLfEsiPzVUCUBuhgDg5uTSV` |
+| Solana | USDT | `HZguEXfTtLChNdJTxAYCbcGscaqikz8JYrEpUhEyeVd9` |
+
+Please send only the listed asset on the listed network — other tokens or networks may be lost.
+请按表中对应的网络转对应的币种，转错币种或网络可能无法找回。
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
