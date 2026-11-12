@@ -1,5 +1,7 @@
 # Laser rangefinder UART protocol decoder (WebSerial + Python)
 
+Datasheets and public prices for every module are in the [ERDI laser rangefinder model list](https://erdilrf.com/models/?utm_source=github&utm_medium=readme&utm_campaign=lrf-uart-protocol-decoder).
+
 **Live decoder: <https://erditech.github.io/lrf-uart-protocol-decoder/>**
 
 Decode **laser rangefinder module UART frames** in the browser or from the command line. Connect a module with **WebSerial** (Chrome / Edge) or paste captured hex. Built-in profiles: **ERDI 905 nm modules** (family B `5C` stream in centimetres and millimetres, LRF1500H 5-byte frame, family A `55 AA` replies) and **Benewake TFmini / TF-Luna style 9-byte frames**. Useful for debugging a **LiDAR distance sensor over serial**, checking checksums, finding the unit of a distance field, and writing your own driver.
