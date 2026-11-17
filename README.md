@@ -4,7 +4,7 @@ Find out what your laser rangefinder or single-point LiDAR is saying on its seri
 hex dump or plug the module in, and this tool detects the protocol and baud rate, decodes every
 frame to metres and flags checksum errors.
 
-**Open it in the browser, no install: <https://erditech.github.io/lrf-uart-protocol-decoder/>**
+**Open it in the browser, no install: <https://erditech.com/lrf-uart-protocol-decoder/>**
 (WebSerial in desktop Chrome / Edge; paste mode works in any browser)
 
 [![ci](https://github.com/ErdiTech/lrf-uart-protocol-decoder/actions/workflows/ci.yml/badge.svg)](https://github.com/ErdiTech/lrf-uart-protocol-decoder/actions/workflows/ci.yml)
@@ -30,7 +30,7 @@ Missing a module? Open an issue with a hex capture and a link to its manual.
 
 ## 30-second start
 
-**Browser.** Open the [live page](https://erditech.github.io/lrf-uart-protocol-decoder/), paste
+**Browser.** Open the [live page](https://erditech.com/lrf-uart-protocol-decoder/), paste
 bytes from any serial terminal and press **Detect & decode**. With a USB-UART adapter attached,
 press **Scan baud rates**: the page listens at 9600 ... 921600 bps and picks the rate and protocol
 that explain the most bytes. Tick the request box for modules that only answer when asked

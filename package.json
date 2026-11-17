@@ -9,6 +9,6 @@
   "scripts": { "test": "node --test tests/" },
   "keywords": ["lidar", "laser-rangefinder", "tfmini", "tf-luna", "benewake", "lightware", "jrt", "tofsense", "webserial", "uart", "serial", "protocol-decoder"],
   "license": "MIT",
-  "homepage": "https://erditech.github.io/lrf-uart-protocol-decoder/",
+  "homepage": "https://erditech.com/lrf-uart-protocol-decoder/",
   "repository": "github:ErdiTech/lrf-uart-protocol-decoder"
 }

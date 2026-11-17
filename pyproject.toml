@@ -30,7 +30,7 @@ serial = ["pyserial>=3.5"]
 lrf-decoder = "lrf_decoder.cli:main"
 
 [project.urls]
-Homepage = "https://erditech.github.io/lrf-uart-protocol-decoder/"
+Homepage = "https://erditech.com/lrf-uart-protocol-decoder/"
 Source = "https://github.com/ErdiTech/lrf-uart-protocol-decoder"
 Issues = "https://github.com/ErdiTech/lrf-uart-protocol-decoder/issues"
 Protocols = "https://github.com/ErdiTech/lrf-uart-protocol-decoder/blob/main/docs/PROTOCOLS.md"
