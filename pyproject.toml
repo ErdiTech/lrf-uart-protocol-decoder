@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lrf-uart-decoder"
+version = "1.0.0"
+description = "Decode and auto-detect laser rangefinder / single-point LiDAR UART frames: Benewake TFmini/TF-Luna/TF02/TF03, LightWare, JRT, Nooploop TOFSense, DFRobot SEN0366, ERDI. CLI + library, checksum checking, baud scan."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.8"
+authors = [{ name = "ERDI TECH LTD", email = "tommy@erdimail.com" }]
+keywords = ["lidar", "laser rangefinder", "tfmini", "tf-luna", "benewake", "lightware", "jrt", "tofsense", "uart", "serial", "protocol decoder", "distance sensor"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering",
+  "Topic :: System :: Hardware",
+  "Topic :: Terminals :: Serial",
+]
+dependencies = []
+
+[project.optional-dependencies]
+serial = ["pyserial>=3.5"]
+
+[project.scripts]
+lrf-decoder = "lrf_decoder.cli:main"
+
+[project.urls]
+Homepage = "https://erditech.github.io/lrf-uart-protocol-decoder/"
+Source = "https://github.com/ErdiTech/lrf-uart-protocol-decoder"
+Issues = "https://github.com/ErdiTech/lrf-uart-protocol-decoder/issues"
+Protocols = "https://github.com/ErdiTech/lrf-uart-protocol-decoder/blob/main/docs/PROTOCOLS.md"
+
+[tool.setuptools]
+package-dir = { "" = "python" }
+packages = ["lrf_decoder"]

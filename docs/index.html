@@ -3,88 +3,292 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Laser rangefinder UART frame decoder (WebSerial) - ERDI LRF</title>
-<meta name="description" content="Decode laser rangefinder UART frames in the browser: connect a module over WebSerial or paste hex. Supports ERDI 5C and 55 AA frames and Benewake TF-style 9-byte frames.">
+<title>LiDAR / Laser Rangefinder UART Decoder (WebSerial)</title>
+<meta name="description" content="Free in-browser serial decoder for laser rangefinder and single-point LiDAR modules: Benewake TFmini, TFmini-S, TFmini Plus, TF-Luna, TF02-Pro, TF03, LightWare, Chengdu JRT, Nooploop TOFSense, DFRobot SEN0366, ERDI. Paste hex or connect over WebSerial; auto-detects protocol and baud, checks checksums.">
+<link rel="canonical" href="https://erditech.github.io/lrf-uart-protocol-decoder/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"LRF UART Protocol Decoder","applicationCategory":"DeveloperApplication","operatingSystem":"Any (Chrome or Edge for WebSerial)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://erditech.github.io/lrf-uart-protocol-decoder/","codeRepository":"https://github.com/ErdiTech/lrf-uart-protocol-decoder","license":"https://opensource.org/licenses/MIT","description":"Decode and auto-detect UART frames from laser rangefinder and single-point LiDAR modules (Benewake TF series, LightWare, JRT, Nooploop TOFSense, DFRobot SEN0366, ERDI).","publisher":{"@type":"Organization","name":"ERDI TECH LTD","url":"https://erdilrf.com/"}}
+</script>
 <style>
-  :root { --bg:#fff; --fg:#14181f; --muted:#5b6472; --line:#d9dee6; --accent:#0b5fff; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#0f1318; --fg:#e8ecf2; --muted:#9aa4b2; --line:#2a323d; --accent:#6ea2ff; } }
-  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui,sans-serif; }
-  main { max-width:860px; margin:0 auto; padding:24px 16px 64px; }
-  h1 { font-size:1.5rem; margin:0 0 4px; } p.lead { color:var(--muted); margin:0 0 20px; }
-  label { display:block; font-weight:600; margin:12px 0 4px; }
-  select, textarea, button, input { font:inherit; padding:8px 10px; border:1px solid var(--line); border-radius:6px; background:transparent; color:inherit; }
-  textarea { width:100%; box-sizing:border-box; min-height:84px; font-family:ui-monospace,monospace; }
-  button { cursor:pointer; background:var(--accent); color:#fff; border-color:var(--accent); } button.secondary { background:transparent; color:var(--fg); border-color:var(--line); }
-  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-  #big { font-size:2.4rem; font-variant-numeric:tabular-nums; margin:16px 0 4px; }
-  table { border-collapse:collapse; width:100%; font-size:.9rem; margin-top:12px; } th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; }
-  code { font-family:ui-monospace,monospace; } .muted { color:var(--muted); font-size:.9rem; }
+  :root { --bg:#ffffff; --panel:#f5f7fa; --fg:#14181f; --muted:#5b6472; --line:#d9dee6; --accent:#0b5fff; --bad-bg:#fde8e8; --bad-fg:#a61b1b; --ok:#127a3a; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1318; --panel:#161b22; --fg:#e8ecf2; --muted:#9aa4b2; --line:#2a323d; --accent:#6ea2ff; --bad-bg:#3a1517; --bad-fg:#ff9b9b; --ok:#5fd38d; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  main { max-width:1040px; margin:0 auto; padding:20px 16px 64px; }
+  h1 { font-size:1.45rem; margin:0 0 2px; } h2 { font-size:1.05rem; margin:28px 0 8px; }
+  p.lead { color:var(--muted); margin:0 0 16px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:760px) { .grid { grid-template-columns:1fr; } }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px 14px; min-width:0; }
+  label { display:block; font-weight:600; margin:8px 0 4px; font-size:.9rem; }
+  select, textarea, button, input { font:inherit; padding:7px 10px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:inherit; max-width:100%; }
+  select { width:100%; }
+  textarea { width:100%; min-height:92px; font-family:ui-monospace,Consolas,monospace; font-size:.85rem; }
+  button { cursor:pointer; background:var(--accent); color:#fff; border-color:var(--accent); }
+  button.secondary { background:transparent; color:var(--fg); border-color:var(--line); }
+  button:disabled { opacity:.5; cursor:default; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px; }
+  #big { font-size:2.3rem; font-variant-numeric:tabular-nums; margin:10px 0 0; line-height:1.2; }
+  .muted { color:var(--muted); font-size:.86rem; }
+  .tablewrap { overflow-x:auto; margin-top:10px; border:1px solid var(--line); border-radius:8px; }
+  table { border-collapse:collapse; width:100%; font-size:.85rem; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; vertical-align:top; }
+  th { background:var(--panel); position:sticky; top:0; }
+  td.hex { font-family:ui-monospace,Consolas,monospace; white-space:nowrap; }
+  tr.bad td { background:var(--bad-bg); color:var(--bad-fg); }
+  .ok { color:var(--ok); font-weight:600; } .badtxt { color:var(--bad-fg); font-weight:600; }
+  #cands td:first-child { font-family:ui-monospace,Consolas,monospace; white-space:nowrap; }
+  code { font-family:ui-monospace,Consolas,monospace; }
+  #cmds button { font-size:.82rem; padding:5px 8px; }
+  footer { margin-top:32px; color:var(--muted); font-size:.86rem; }
+  a { color:var(--accent); }
 </style>
 </head>
 <body>
 <main>
-  <h1>Laser rangefinder UART frame decoder</h1>
-  <p class="lead">Connect a rangefinder module with WebSerial (Chrome / Edge) or paste captured hex. Runs entirely in your browser.</p>
+  <h1>LiDAR / laser rangefinder UART decoder</h1>
+  <p class="lead">Paste a hex dump or connect a module over WebSerial (Chrome / Edge). The page finds the protocol and baud rate, decodes every frame and flags checksum errors. Everything runs in your browser; nothing is uploaded.</p>
 
-  <label for="profile">Protocol profile</label>
-  <select id="profile"></select>
-  <div class="muted" id="baudnote"></div>
-
-  <div class="row" style="margin-top:12px">
-    <button id="connect">Connect serial port</button>
-    <button id="disconnect" class="secondary" disabled>Disconnect</button>
-    <span class="muted" id="status">WebSerial: checking...</span>
+  <div class="grid">
+    <section class="card">
+      <label for="hex">1. Paste captured bytes (hex, any separators)</label>
+      <textarea id="hex" spellcheck="false" placeholder="59 59 79 00 00 02 F0 08 25 59 59 7A 00 00 02 F0 08 26"></textarea>
+      <div class="row">
+        <button id="decode">Detect &amp; decode</button>
+        <select id="example" style="width:auto"><option value="">Load an example...</option></select>
+      </div>
+    </section>
+    <section class="card">
+      <label for="profile">Protocol</label>
+      <select id="profile"></select>
+      <label for="baud">Baud rate</label>
+      <select id="baud"></select>
+      <div class="muted" id="srcnote"></div>
+      <div class="row">
+        <button id="connect">2. Connect serial port</button>
+        <button id="scan" class="secondary">Scan baud rates</button>
+        <button id="disconnect" class="secondary" disabled>Disconnect</button>
+      </div>
+      <div class="row muted"><label style="display:flex;gap:6px;align-items:center;margin:0;font-weight:400"><input type="checkbox" id="probe" style="width:auto"> while scanning, send each module's documented read-only measurement request</label></div>
+      <div class="muted" id="status">WebSerial: checking...</div>
+    </section>
   </div>
 
-  <label for="hex">Or paste hex bytes</label>
-  <textarea id="hex" placeholder="5C 02 11 EC 5C 03 11 EB"></textarea>
-  <div class="row" style="margin-top:8px"><button id="decode">Decode pasted hex</button><button id="clear" class="secondary">Clear table</button></div>
+  <section class="card" style="margin-top:16px">
+    <div id="big">-</div>
+    <div class="muted" id="stats">No data yet.</div>
+    <div id="candwrap" hidden>
+      <h2 style="margin-top:12px">Protocol candidates</h2>
+      <div class="tablewrap"><table id="cands"><thead><tr><th>Profile</th><th>Explains</th><th>Frames</th><th>Bad</th><th>Baud</th><th>Same bytes, pick by model</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="row" id="cmds"></div>
+    <div class="row"><input id="sendhex" placeholder="hex to send, e.g. 55 AA 88 FF FF FF FF 84" style="flex:1;min-width:200px;font-family:ui-monospace,monospace"><button id="send" class="secondary" disabled>Send</button><button id="csv" class="secondary">Export CSV</button><button id="clear" class="secondary">Clear</button></div>
+    <div class="tablewrap" style="max-height:520px"><table><thead><tr><th>#</th><th>Check</th><th>Frame</th><th>Type</th><th>Distance (m)</th><th>Strength</th><th>Temp</th><th>Note</th></tr></thead><tbody id="rows"></tbody></table></div>
+  </section>
 
-  <div id="big">-</div>
-  <div class="muted" id="stats"></div>
-  <table><thead><tr><th>#</th><th>Frame</th><th>Raw</th><th>Distance (m)</th><th>Note</th></tr></thead><tbody id="rows"></tbody></table>
+  <h2>Supported modules</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Vendor</th><th>Modules</th><th>Frame</th><th>Default baud</th></tr></thead>
+    <tbody>
+      <tr><td>Benewake</td><td>TFmini, TFmini-S, TFmini Plus, TF-Luna, TF02-Pro, TF03 (9-byte cm / mm, string and Pixhawk modes)</td><td><code>59 59 DL DH SL SH TL TH SUM</code></td><td>115200</td></tr>
+      <tr><td>LightWare</td><td>SF30/D binary protocol; SF10 / SF11 ASCII serial</td><td><code>AA flags.. ID data CRC16</code> / <code>22.48 m\r\n</code></td><td>115200</td></tr>
+      <tr><td>Chengdu JRT</td><td>phase-shift laser distance sensors (U81 / U85 / M88 class)</td><td><code>AA 00 00 22 00 03 d d d d q q SUM</code></td><td>19200</td></tr>
+      <tr><td>Nooploop</td><td>TOFSense, TOFSense-F (UART active and query output)</td><td><code>57 00 .. 16 bytes</code></td><td>921600</td></tr>
+      <tr><td>DFRobot</td><td>SEN0366 infrared laser distance sensor 50 / 80 m and the identical 80 m modules</td><td><code>80 06 83 ASCII CS</code></td><td>9600</td></tr>
+      <tr><td>ERDI</td><td>LRF50H...LRF1500H, LRF22VB, LRF50VB, LR1000E2...LR2000E4, LRF1200A1, LRF3000A1, SPD1200</td><td><code>5C lo hi chk</code> / <code>55 AA fn .. SUM</code></td><td>460800 / 115200</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">Each profile is built from the vendor's public manual; sources and frame tables are in <a href="https://github.com/ErdiTech/lrf-uart-protocol-decoder/blob/main/docs/PROTOCOLS.md">PROTOCOLS.md</a>. Same bytes can mean different units on different models (an ERDI <code>5C 02 11 EC</code> is 43.54 m on an H-series module and 4.354 m on a VB module), so confirm the model before trusting the number.</p>
 
-  <p class="muted">The same <code>5C 02 11 EC</code> frame is 43.54 m on an ERDI H-series module and 4.354 m on a VB-series module: pick the profile that matches your model.
-  Model pages and datasheets: <a href="https://erdilrf.com/models/?utm_source=github&utm_medium=pages&utm_campaign=lrf-uart-protocol-decoder">erdilrf.com/models</a>.
-  Source: <a href="https://github.com/ErdiTech/lrf-uart-protocol-decoder">github.com/ErdiTech/lrf-uart-protocol-decoder</a>.</p>
+  <footer>
+    Open source (MIT): <a href="https://github.com/ErdiTech/lrf-uart-protocol-decoder">github.com/ErdiTech/lrf-uart-protocol-decoder</a> · Python CLI: <code>pip install lrf-uart-decoder</code> · Maintained by ERDI TECH LTD (<a href="https://erdilrf.com/?utm_source=github&amp;utm_medium=pages&amp;utm_campaign=lrf-uart-protocol-decoder">erdilrf.com</a>), makers of 905 / 1535 nm laser rangefinder modules. Found a module this page cannot read? <a href="https://github.com/ErdiTech/lrf-uart-protocol-decoder/issues/new">Open an issue</a> with a hex capture and its manual.
+  </footer>
 </main>
 <script type="module">
-import { Decoder, PROFILES, parseHex } from "./decoder.js";
+import { Decoder, PROFILES, COMMANDS, BAUD_RATES, detect, parseHex, VERSION } from "./decoder.js";
 const $ = (id) => document.getElementById(id);
+const EXAMPLES = [
+  ["Benewake TFmini-S, two frames + noise", "00 13 59 59 79 00 00 02 F0 08 25 59 59 7A 00 00 02 F0 08 26 59 59 7B 00 00 02 F0 08 99"],
+  ["Chengdu JRT continuous fast (vendor log)", "AA 00 00 20 00 01 00 06 27 AA 00 00 22 00 03 00 00 05 F6 00 45 65 AA 00 00 22 00 03 00 00 05 F6 00 32 52 AA 00 00 22 00 03 00 00 05 F5 00 28 47"],
+  ["Nooploop TOFSense (manual example)", "57 00 ff 00 9e 8f 00 00 ad 08 00 00 03 00 06 41"],
+  ["ERDI H series stream", "5C 02 11 EC 5C 03 11 EB 5C 02 11 EC"],
+  ["ERDI LR / LRF-A1 single shot", "55 AA 88 FF FF FF FF 84 55 AA 88 01 FF 00 2A B1"],
+  ["DFRobot SEN0366 single measurement", "80 06 02 78 80 06 83 31 32 33 2E 34 35 36 94"],
+  ["LightWare SF11 ASCII", "32 32 2E 34 38 20 6D 20 31 2E 30 34 35 20 56 0D 0A 32 32 2E 35 30 20 6D 20 31 2E 30 34 36 20 56 0D 0A"],
+];
+for (const [name, h] of EXAMPLES) $("example").add(new Option(name, h));
+
 const sel = $("profile");
-for (const [k, p] of Object.entries(PROFILES)) sel.add(new Option(p.label, k));
-let dec = new Decoder(sel.value), count = 0, port = null, reader = null;
-function note() { $("baudnote").textContent = "Default baud " + PROFILES[sel.value].baud + ", 8N1."; }
-note();
-sel.onchange = () => { dec = new Decoder(sel.value); note(); };
+sel.add(new Option("Auto-detect", "auto"));
+const groups = {};
+for (const [k, p] of Object.entries(PROFILES)) {
+  if (!groups[p.vendor]) { groups[p.vendor] = document.createElement("optgroup"); groups[p.vendor].label = p.vendor; sel.append(groups[p.vendor]); }
+  groups[p.vendor].append(new Option(p.label, k));
+}
+for (const b of BAUD_RATES) $("baud").add(new Option(b + " bps", b));
+
+let dec = null, count = 0, port = null, reader = null, writer = null, scanning = false, log = [];
+function onProfile() {
+  const k = sel.value;
+  if (k === "auto") { $("srcnote").textContent = "Auto-detect needs data: paste hex, or use Scan baud rates with a connected module."; dec = null; }
+  else {
+    const p = PROFILES[k];
+    $("baud").value = String(p.baud[0]);
+    $("srcnote").innerHTML = "Default baud " + p.baud.join(" / ") + ", 8N1. Source: " + p.source.map((u) => '<a href="' + u + '" rel="noopener">' + new URL(u).hostname + "</a>").join(", ");
+    dec = new Decoder(k);
+  }
+  const cmds = COMMANDS[k] || [];
+  $("cmds").textContent = "";
+  for (const [name, h] of cmds) { const b = document.createElement("button"); b.className = "secondary"; b.textContent = name; b.title = h; b.onclick = () => { $("sendhex").value = h; sendHex(h); }; $("cmds").append(b); }
+}
+sel.onchange = onProfile;
+onProfile();
+
+function cell(tr, v, cls) { const td = document.createElement("td"); td.textContent = v; if (cls) td.className = cls; tr.append(td); }
 function show(frames) {
   for (const f of frames) {
     count++;
+    log.push(f);
     const tr = document.createElement("tr");
-    const d = f.distance_m === null ? "-" : f.distance_m.toFixed(3);
-    for (const v of [count, f.hex, f.raw, d, f.out_of_range ? "out of range / no echo" : ""]) { const td = document.createElement("td"); td.textContent = v; tr.append(td); }
+    if (!f.ok) tr.className = "bad";
+    cell(tr, count);
+    cell(tr, f.ok ? "OK" : "CHECKSUM", f.ok ? "ok" : "badtxt");
+    cell(tr, f.hex, "hex");
+    cell(tr, f.kind);
+    cell(tr, f.kind !== "measurement" ? "" : f.distance_m === null || f.distance_m === undefined ? "out of range" : f.distance_m.toFixed(3));
+    cell(tr, f.strength ?? "");
+    cell(tr, f.temp_c !== undefined ? f.temp_c.toFixed(1) + " C" : "");
+    cell(tr, f.note || "");
     $("rows").prepend(tr);
-    while ($("rows").children.length > 200) $("rows").lastChild.remove();
-    $("big").textContent = f.distance_m === null ? "out of range" : f.distance_m.toFixed(3) + " m";
+    while ($("rows").children.length > 500) $("rows").lastChild.remove();
+    if (f.ok && f.kind === "measurement") $("big").textContent = f.distance_m === null ? "out of range" : f.distance_m.toFixed(3) + " m";
   }
-  $("stats").textContent = dec.frames + " valid frames, " + dec.skipped + " bytes skipped (resync)";
+  if (dec) $("stats").textContent = PROFILES[dec.profile].label + ": " + dec.frames + " valid frames, " + dec.bad + " checksum errors, " + dec.skipped + " bytes skipped (resync)";
 }
-$("decode").onclick = () => { try { dec = new Decoder(sel.value); show(dec.push(parseHex($("hex").value))); } catch (e) { $("stats").textContent = e.message; } };
-$("clear").onclick = () => { $("rows").textContent = ""; count = 0; };
-$("status").textContent = "serial" in navigator ? "WebSerial available" : "WebSerial not supported in this browser (use Chrome or Edge); paste mode still works";
+function showCands(cands) {
+  const tb = $("cands").tBodies[0];
+  tb.textContent = "";
+  $("candwrap").hidden = false;
+  if (!cands.length) { const tr = document.createElement("tr"); cell(tr, "No known protocol in these bytes. Check baud rate, TX/RX wiring and logic level."); tr.firstChild.colSpan = 6; tb.append(tr); return; }
+  for (const c of cands.slice(0, 6)) {
+    const tr = document.createElement("tr");
+    cell(tr, c.profile); cell(tr, (100 * c.coverage).toFixed(0) + "% of bytes"); cell(tr, c.frames); cell(tr, c.bad); cell(tr, c.baud.join(" / ")); cell(tr, c.members.length > 1 ? c.members.join(", ") : "");
+    tr.style.cursor = "pointer"; tr.title = "Decode with " + c.profile;
+    tr.onclick = () => { sel.value = c.profile; onProfile(); runPaste(false); };
+    tb.append(tr);
+  }
+}
+function runPaste(auto) {
+  let bytes;
+  try { bytes = parseHex($("hex").value); } catch (e) { $("stats").textContent = e.message; return; }
+  if (!bytes.length) { $("stats").textContent = "Paste some hex bytes first."; return; }
+  if (auto) {
+    const cands = detect(bytes);
+    showCands(cands);
+    if (sel.value === "auto" && cands.length) { sel.value = cands[0].profile; onProfile(); }
+  }
+  if (sel.value === "auto") return;
+  $("rows").textContent = ""; count = 0; log = [];
+  dec = new Decoder(sel.value);
+  show(dec.push(bytes));
+}
+$("decode").onclick = () => runPaste(true);
+$("example").onchange = (e) => { if (e.target.value) { $("hex").value = e.target.value; sel.value = "auto"; onProfile(); runPaste(true); } };
+$("clear").onclick = () => { $("rows").textContent = ""; count = 0; log = []; $("big").textContent = "-"; };
+$("csv").onclick = () => {
+  const head = ["n", "profile", "ok", "kind", "hex", "distance_m", "strength", "temp_c", "note"];
+  const lines = [head.join(",")].concat(log.map((f, i) => [i + 1, f.profile, f.ok, f.kind, f.hex, f.distance_m ?? "", f.strength ?? "", f.temp_c ?? "", '"' + (f.note || "").replace(/"/g, '""') + '"'].join(",")));
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/csv" }));
+  a.download = "lrf-capture.csv"; a.click();
+};
+
+const hasSerial = "serial" in navigator;
+$("status").textContent = hasSerial ? "WebSerial available. v" + VERSION : "WebSerial is not available in this browser (use desktop Chrome or Edge). Paste mode still works. v" + VERSION;
+if (!hasSerial) { $("connect").disabled = true; $("scan").disabled = true; }
+
+async function openPort(baud) {
+  await port.open({ baudRate: baud });
+  writer = port.writable.getWriter();
+  reader = port.readable.getReader();
+}
+async function closePort() {
+  try { if (reader) { await reader.cancel(); reader.releaseLock(); } } catch (_) {}
+  try { if (writer) writer.releaseLock(); } catch (_) {}
+  try { await port.close(); } catch (_) {}
+  reader = writer = null;
+}
+async function sendHex(h) {
+  if (!writer) { $("status").textContent = "Connect a port first."; return; }
+  try { await writer.write(new Uint8Array(parseHex(h))); $("status").textContent = "sent " + h; } catch (e) { $("status").textContent = String(e.message || e); }
+}
+$("send").onclick = () => sendHex($("sendhex").value);
+
 $("connect").onclick = async () => {
-  if (!("serial" in navigator)) return;
+  if (sel.value === "auto") { $("status").textContent = "Pick a protocol first, or use Scan baud rates to find it."; return; }
   try {
-    port = await navigator.serial.requestPort();
-    await port.open({ baudRate: PROFILES[sel.value].baud });
+    port = port || await navigator.serial.requestPort();
+    const baud = Number($("baud").value);
+    await openPort(baud);
     dec = new Decoder(sel.value);
-    $("connect").disabled = true; $("disconnect").disabled = false; $("status").textContent = "connected";
-    reader = port.readable.getReader();
+    $("connect").disabled = true; $("scan").disabled = true; $("disconnect").disabled = false; $("send").disabled = false;
+    $("status").textContent = "connected at " + baud + " bps";
     for (;;) { const { value, done } = await reader.read(); if (done) break; if (value) show(dec.push(value)); }
   } catch (e) { $("status").textContent = String(e.message || e); }
-  finally { try { reader && reader.releaseLock(); } catch (_) {} }
 };
-$("disconnect").onclick = async () => { try { reader && await reader.cancel(); await port.close(); } catch (_) {} $("connect").disabled = false; $("disconnect").disabled = true; $("status").textContent = "disconnected"; };
+$("disconnect").onclick = async () => { scanning = false; await closePort(); $("connect").disabled = false; $("scan").disabled = false; $("disconnect").disabled = true; $("send").disabled = true; $("status").textContent = "disconnected"; };
+
+async function readFor(ms) {
+  const chunks = [];
+  const end = Date.now() + ms;
+  let pending = null; // keep one outstanding read so no chunk is lost when the window times out
+  while (Date.now() < end && scanning) {
+    const t = new Promise((r) => setTimeout(() => r({ timeout: true }), Math.max(10, end - Date.now())));
+    if (!pending) pending = reader.read();
+    const r = await Promise.race([pending, t]);
+    if (r.timeout) break;
+    pending = null;
+    if (r.done) break;
+    if (r.value) chunks.push(...r.value);
+  }
+  return chunks;
+}
+$("scan").onclick = async () => {
+  try {
+    port = port || await navigator.serial.requestPort();
+    scanning = true;
+    $("connect").disabled = true; $("scan").disabled = true; $("disconnect").disabled = false;
+    const results = [];
+    for (const baud of BAUD_RATES) {
+      if (!scanning) break;
+      $("status").textContent = "scanning " + baud + " bps...";
+      await openPort(baud);
+      if ($("probe").checked) {
+        for (const list of Object.values(COMMANDS)) for (const [name, h] of list) if (/^(single|query|continuous fast|read cache)/i.test(name)) await writer.write(new Uint8Array(parseHex(h)));
+      }
+      const bytes = await readFor(1500);
+      if ($("probe").checked) await writer.write(new Uint8Array([0x58]));
+      await closePort();
+      const c = detect(bytes);
+      results.push({ baud, n: bytes.length, best: c[0], bytes, cands: c });
+    }
+    scanning = false;
+    const hits = results.filter((r) => r.best).sort((a, b) => b.best.coverage - a.best.coverage || b.best.frames - a.best.frames);
+    $("status").textContent = "scan: " + results.map((r) => r.baud + ":" + r.n + "B" + (r.best ? "(" + r.best.profile + ")" : "")).join("  ");
+    if (hits.length) {
+      const h = hits[0];
+      sel.value = h.best.profile; onProfile(); $("baud").value = String(h.baud);
+      showCands(h.cands);
+      $("hex").value = h.bytes.slice(0, 4096).map((b) => b.toString(16).padStart(2, "0")).join(" ").toUpperCase();
+      runPaste(false);
+      $("status").textContent += "  -> best " + h.baud + " bps, " + h.best.profile + ". Press Connect to stream.";
+    } else $("status").textContent += "  -> nothing decodable. Try ticking the request box, check wiring (TX to RX), 3.3 V vs 5 V, and power.";
+  } catch (e) { $("status").textContent = String(e.message || e); scanning = false; }
+  $("connect").disabled = false; $("scan").disabled = false; $("disconnect").disabled = true;
+};
+
+const q = new URLSearchParams(location.search).get("hex");
+if (q) { $("hex").value = q; runPaste(true); }
 </script>
 </body>
 </html>

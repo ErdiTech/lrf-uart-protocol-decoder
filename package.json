@@ -1,9 +1,14 @@
 {
   "name": "lrf-uart-protocol-decoder",
-  "version": "0.1.0",
-  "description": "Laser rangefinder UART frame decoder (WebSerial + Python): ERDI 5C / 55 AA frames, Benewake TF-style 9-byte frames",
+  "version": "1.0.0",
+  "description": "Decode and auto-detect laser rangefinder / single-point LiDAR UART frames in the browser (WebSerial) or Node: Benewake TFmini/TF-Luna/TF02-Pro/TF03, LightWare, Chengdu JRT, Nooploop TOFSense, DFRobot SEN0366, ERDI",
   "type": "module",
+  "main": "docs/decoder.js",
+  "exports": "./docs/decoder.js",
+  "files": ["docs/decoder.js"],
   "scripts": { "test": "node --test tests/" },
+  "keywords": ["lidar", "laser-rangefinder", "tfmini", "tf-luna", "benewake", "lightware", "jrt", "tofsense", "webserial", "uart", "serial", "protocol-decoder"],
   "license": "MIT",
+  "homepage": "https://erditech.github.io/lrf-uart-protocol-decoder/",
   "repository": "github:ErdiTech/lrf-uart-protocol-decoder"
 }

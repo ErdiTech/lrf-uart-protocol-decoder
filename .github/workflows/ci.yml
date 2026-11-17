@@ -10,9 +10,12 @@ jobs:
       - run: node --test tests/
   python:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.12"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
-      - run: pip install pytest
-      - run: python -m pytest -q python
+        with: { python-version: "${{ matrix.python-version }}" }
+      - run: pip install pytest . && python -m pytest -q python
+      - run: lrf-decoder "AA 00 00 22 00 03 00 00 05 F6 00 45 65" && python -m lrf_decoder --list

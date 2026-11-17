@@ -1,55 +1,42 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Decoder, parseHex } from "../docs/decoder.js";
+import { readFileSync } from "node:fs";
+import { Decoder, PROFILES, decode, detect, parseHex, crc16ccitt } from "../docs/decoder.js";
 
-const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} != ${b}`);
+const V = JSON.parse(readFileSync(new URL("./vectors.json", import.meta.url), "utf8"));
+const near = (a, b, msg) => assert.ok(Math.abs(a - b) < 1e-9, `${msg}: ${a} != ${b}`);
 
-test("manual vector: H series is centimetres", () => {
-  const d = new Decoder("erdi-b-4-cm");
-  const f = d.push(parseHex("5C 02 11 EC"));
-  assert.equal(f.length, 1);
-  near(f[0].distance_m, 43.54);
+for (const v of V.vectors) {
+  test(`${v.profile}: ${v.hex.slice(0, 40)} (${v.origin})`, () => {
+    const { frames } = decode(parseHex(v.hex), v.profile);
+    assert.equal(frames.length, v.expect.length, JSON.stringify(frames));
+    v.expect.forEach((e, k) => {
+      const f = frames[k];
+      for (const [key, want] of Object.entries(e)) {
+        if (typeof want === "number" && want !== null && typeof f[key] === "number") near(f[key], want, key);
+        else assert.deepEqual(f[key], want, `${key} of frame ${k}`);
+      }
+    });
+  });
+}
+
+for (const d of V.detect) {
+  test(`detect ${d.family}`, () => {
+    const r = detect(parseHex(d.hex));
+    assert.ok(r.length > 0, "no candidates");
+    assert.equal(r[0].family, d.family, JSON.stringify(r.map((x) => [x.family, x.coverage])));
+  });
+}
+
+test("every profile cites a source and a baud rate", () => {
+  for (const [k, p] of Object.entries(PROFILES)) {
+    assert.ok(p.source && p.source.length, k);
+    assert.ok(p.baud && p.baud.length, k);
+  }
 });
 
-test("same bytes on VB series are millimetres", () => {
-  const d = new Decoder("erdi-b-4-mm");
-  near(d.push(parseHex("5C 02 11 EC"))[0].distance_m, 4.354);
-});
-
-test("LRF1500H five-byte frame", () => {
-  const body = [0x02, 0x11, 0x03];
-  const chk = ~body.reduce((a, b) => a + b, 0) & 0xff;
-  const d = new Decoder("erdi-b-5-cm");
-  const f = d.push([0x5c, ...body, chk]);
-  near(f[0].distance_m, 0x031102 * 0.01);
-});
-
-test("out of range marker (H series 65535)", () => {
-  const d = new Decoder("erdi-b-4-cm");
-  const f = d.push(parseHex("5C FF FF 01"));
-  assert.equal(f[0].out_of_range, true);
-  assert.equal(f[0].distance_m, null);
-});
-
-test("family A reply scales by ten", () => {
-  const d = new Decoder("erdi-a");
-  near(d.push(parseHex("55 AA 88 01 FF 00 2A B1"))[0].distance_m, 4.2);
-});
-
-test("family A no echo", () => {
-  const d = new Decoder("erdi-a");
-  const f = d.push(parseHex("55 AA 88 00 FF 00 00 86"));
-  assert.equal(f.length, 1);
-  assert.equal(f[0].distance_m, null);
-});
-
-test("Benewake-style 9-byte frame", () => {
-  const d = new Decoder("benewake-tf-9");
-  const body = [0x59, 0x59, 0x64, 0x00, 0x20, 0x03, 0x00, 0x00];
-  const chk = body.reduce((a, b) => a + b, 0) & 0xff;
-  const f = d.push([...body, chk]);
-  near(f[0].distance_m, 1.0);
-  assert.equal(f[0].strength, 0x320);
+test("LightWare CRC equals CRC-16/XMODEM check value", () => {
+  assert.equal(crc16ccitt([..."123456789"].map((c) => c.charCodeAt(0))), 0x31c3);
 });
 
 test("resync after garbage and split across pushes", () => {
@@ -58,6 +45,15 @@ test("resync after garbage and split across pushes", () => {
   const f = d.push(parseHex("11 EC 5C 02 11 EC"));
   assert.equal(f.length, 2);
   assert.ok(d.skipped >= 1);
+});
+
+test("byte-by-byte streaming equals one-shot decoding", () => {
+  for (const v of V.vectors) {
+    const d = new Decoder(v.profile);
+    const got = [];
+    for (const b of parseHex(v.hex)) got.push(...d.push([b]));
+    assert.equal(got.length, decode(parseHex(v.hex), v.profile).frames.length, v.profile + " " + v.hex);
+  }
 });
 
 test("parseHex accepts 0x and separators", () => {
