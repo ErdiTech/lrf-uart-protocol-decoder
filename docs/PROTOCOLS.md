@@ -38,8 +38,8 @@ The TF03 page prints the checksum as "Byte0 + Byte2 + ... + Byte7"; every other 
 bytes 0-7. The decoder sums bytes 0-7. If a real TF03 capture fails every checksum by exactly
 `0x59`, please open an issue.
 
-Benewake mirrors: Benewake's own download centre needs a login, so the links above are vendor
-manuals republished by distributors. Document numbers are quoted so you can match them against
+Benewake links: the manuals above are Benewake documents hosted by distributors (SparkFun,
+Amazon, Evelta and others). Document numbers are quoted so you can match them against
 your copy.
 
 ## ASCII metres per line
