@@ -98,6 +98,10 @@ Add a parser and a `PROFILES` entry in `docs/decoder.js` and `python/lrf_decoder
 vectors to `tests/vectors.json`, and document the frame with its source URL in
 `docs/PROTOCOLS.md`. Only use values from the manufacturer's manual or a vendor capture.
 
+## Questions and help
+
+Wiring, protocol and integration questions: ask on the [ERDI engineering Q&A forum](https://community.erditech.com/?utm_source=github&utm_medium=readme&utm_campaign=lrf-uart-protocol-decoder). Answers come from ERDI engineers and stay searchable for the next person. Bugs in this code still go to GitHub Issues.
+
 ## Related projects
 
 - [ErdiTech/erdi-lrf-drivers](https://github.com/ErdiTech/erdi-lrf-drivers): Python, Arduino and ROS 2 drivers plus transcribed protocol documents for ERDI modules
