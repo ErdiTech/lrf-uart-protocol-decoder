@@ -1,6 +1,6 @@
 {
   "name": "lrf-uart-protocol-decoder",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Decode and auto-detect laser rangefinder / single-point LiDAR UART frames in the browser (WebSerial) or Node: Benewake TFmini/TF-Luna/TF02-Pro/TF03, LightWare, Chengdu JRT, Nooploop TOFSense, DFRobot SEN0366, ERDI",
   "type": "module",
   "main": "docs/decoder.js",

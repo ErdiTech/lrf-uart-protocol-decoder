@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1 - 2026-11-26
+
+### Changed
+- Package metadata: Homepage now points to the live page at erditech.com (the old github.io address only redirects); added Documentation, ERDI module catalogue (erdilrf.com) and module database links.
+
 ## 1.0.0 - 2026-11-17
 
 ### Added

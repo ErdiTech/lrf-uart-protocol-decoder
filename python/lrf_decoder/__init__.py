@@ -9,5 +9,5 @@
 """
 from .core import BAUD_RATES, COMMANDS, PROFILES, Decoder, crc16ccitt, decode, detect, parse_hex
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __all__ = ["PROFILES", "COMMANDS", "BAUD_RATES", "Decoder", "decode", "detect", "parse_hex", "crc16ccitt", "__version__"]

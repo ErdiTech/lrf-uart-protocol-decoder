@@ -14,7 +14,7 @@ import time
 
 from .core import BAUD_RATES, COMMANDS, PROFILES, Decoder, detect, parse_hex
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 
 def fmt(fr):
