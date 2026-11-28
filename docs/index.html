@@ -96,7 +96,7 @@
   <figure class="ph-demo stream" aria-label="Example: three Benewake frames decoded">
     <div class="s-head"><span>Benewake 9-byte · 115200 8N1</span><i>built-in example</i></div>
     <ol data-stream></ol>
-    <div class="s-read"><b data-read>1.22 m</b><span>last valid frame (#2)<br>#3 fails: sum 0x27 &ne; 0x99</span></div>
+    <div class="s-read"><b data-read>1.22 m</b><span data-read-note>frame #2 · checksum ok<br>frame #3 fails: sum 0x27 &ne; 0x99</span></div>
   </figure>
   <span class="ph-line" aria-hidden="true"></span>
 </section>
@@ -371,7 +371,7 @@ if (q) { $("hex").value = q; runPaste(true); }
   if (!ol) return;
   /* the decoder's built-in Benewake example ("two frames + noise"), in capture order:
      59 59 79 .. 25 -> 1.21 m, 59 59 7A .. 26 -> 1.22 m, 59 59 7B .. 99 -> bad checksum (sum low byte is 0x27).
-     The big readout is the last valid frame of that capture: frame #2, 1.22 m. A highlight walks the frames in order. */
+     The readout beside the list shows the highlighted frame (1.21 m, 1.22 m, then 'no reading' for the bad checksum). */
   var F = [['79 00 00 02 F0 08 25', '1.21 m', 1], ['7A 00 00 02 F0 08 26', '1.22 m', 1], ['7B 00 00 02 F0 08 99', 'bad checksum', 0]];
   F.forEach(function (f, k) {
     var e = document.createElement('li');
@@ -379,17 +379,26 @@ if (q) { $("hex").value = q; runPaste(true); }
     e.innerHTML = '<span class="b"><i class="fno">#' + (k + 1) + '</i><em>59 59</em> ' + f[0] + '</span><span class="r">' + (f[2] ? '&#10003; ' : '&#10007; ') + f[1] + '</span>';
     ol.appendChild(e);
   });
-  if (read) read.textContent = '1.22 m';
+  /* the readout always shows the frame that is highlighted, so it can never disagree with the row beside it */
+  var note = document.querySelector('[data-read-note]');
+  var show = function (k) {
+    if (!read) return;
+    read.textContent = F[k][2] ? F[k][1] : 'no reading';
+    if (note) note.innerHTML = F[k][2] ? 'frame #' + (k + 1) + ' &middot; checksum ok' : 'frame #3 fails: sum 0x27 &ne; 0x99';
+  };
+  show(1);
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   var rows = ol.children, i = 0, on = true;
   if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { on = es[0].isIntersecting; }).observe(ol);
   (function tick() {
     if (on) {
-      [].forEach.call(rows, function (r, k) { r.classList.toggle('cur', k === i % F.length); });
-      if (i % F.length === 1 && read) { read.classList.remove('flash'); void read.offsetWidth; read.classList.add('flash'); }
+      var k = i % F.length;
+      [].forEach.call(rows, function (r, j) { r.classList.toggle('cur', j === k); });
+      show(k);
+      if (read) { read.classList.remove('flash'); void read.offsetWidth; read.classList.add('flash'); }
       i++;
     }
-    setTimeout(tick, 1100);
+  setTimeout(tick, 1100);
   })();
 })();
 </script>
